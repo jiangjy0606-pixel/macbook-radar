@@ -6,7 +6,7 @@ on:
     paths:
       - ".github/workflows/xianyu-bridge.yml"
   schedule:
-    - cron: "*/15 * * * *"
+    - cron: "*/30 * * * *"
   workflow_dispatch:
 
 permissions:
@@ -27,14 +27,47 @@ jobs:
           B='fe97de49d5ea8efe'
           C='4a56d3be1b5463d9'
           URL="https://d3uiiydii9q99b.cloudfront.net/run/${A}${B}${C}"
-          curl --fail --silent --show-error --max-time 90 "$URL" -o latest.json
+          set +e
+          curl --fail --silent --show-error --max-time 90 "$URL" -o /tmp/latest-new.json
+          CURL_RC=$?
+          set -e
           python3 - <<'PY'
-          import json
-          j=json.load(open("latest.json", encoding="utf-8"))
-          assert j.get("ok") is True, "Module B returned ok != true"
-          assert int(j.get("count", 0)) >= 1, "Module B returned no items"
-          print("ok=", j.get("ok"), "count=", j.get("count"), "coverage_ok=", int(j.get("count",0)) >= 20, "timestamp=", j.get("timestamp"))
+          import json, os, datetime, sys
+          now=datetime.datetime.now(datetime.timezone.utc).isoformat()
+          status={"checked_at_utc":now,"accepted":False}
+          if not os.path.exists("/tmp/latest-new.json"):
+              status.update({"reason":"fetch_failed"})
+              json.dump(status,open("bridge-status.json","w",encoding="utf-8"),ensure_ascii=False,indent=2)
+              print("Module B fetch failed; preserving previous good snapshot")
+              raise SystemExit(10)
+          try:
+              j=json.load(open("/tmp/latest-new.json",encoding="utf-8"))
+          except Exception as e:
+              status.update({"reason":"invalid_json","detail":repr(e)})
+              json.dump(status,open("bridge-status.json","w",encoding="utf-8"),ensure_ascii=False,indent=2)
+              print("Invalid Module B JSON; preserving previous good snapshot")
+              raise SystemExit(10)
+          count=int(j.get("count",0) or 0)
+          if j.get("ok") is not True or count < 1:
+              status.update({"reason":"empty_or_not_ok","ok":j.get("ok"),"count":count,"ret":j.get("ret")})
+              json.dump(status,open("bridge-status.json","w",encoding="utf-8"),ensure_ascii=False,indent=2)
+              print("Module B returned no usable items; preserving previous good snapshot")
+              raise SystemExit(10)
+          status.update({"accepted":True,"reason":"ok","count":count,"coverage_ok":count>=20,"source_timestamp":j.get("timestamp")})
+          json.dump(status,open("bridge-status.json","w",encoding="utf-8"),ensure_ascii=False,indent=2)
+          os.replace("/tmp/latest-new.json","latest.json")
+          print("ok=",j.get("ok"),"count=",count,"coverage_ok=",count>=20,"timestamp=",j.get("timestamp"))
           PY
+          RC=$?
+          if [ "$RC" = "10" ]; then
+            git config user.name "macbook-radar-bot"
+            git config user.email "actions@users.noreply.github.com"
+            git add bridge-status.json
+            git commit -m "Record Xianyu bridge degraded check" || true
+            git push || true
+            exit 0
+          fi
+          test "$RC" = "0"
 
       - name: Build compact status
         shell: bash
@@ -124,7 +157,7 @@ jobs:
           set -e
           git config user.name "macbook-radar-bot"
           git config user.email "actions@users.noreply.github.com"
-          git add latest.json latest-public.json xianyu-state.json xianyu-delta.json
+          git add latest.json latest-public.json xianyu-state.json xianyu-delta.json bridge-status.json
           if git diff --cached --quiet; then
             echo "No data change"
           else
