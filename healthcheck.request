@@ -1,4 +1,5 @@
 {
   "request": "tokyo-server-healthcheck",
-  "reason": "verify VPN-priority services remain reachable after Xianyu search"
+  "reason": "post-v3 acceptance",
+  "marker": "2026-09-21-final-acceptance"
 }
