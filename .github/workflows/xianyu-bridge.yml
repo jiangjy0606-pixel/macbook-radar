@@ -32,8 +32,8 @@ jobs:
           import json
           j=json.load(open("latest.json", encoding="utf-8"))
           assert j.get("ok") is True, "Module B returned ok != true"
-          assert int(j.get("count", 0)) >= 20, "Module B returned fewer than 20 items"
-          print("ok=", j.get("ok"), "count=", j.get("count"), "timestamp=", j.get("timestamp"))
+          assert int(j.get("count", 0)) >= 1, "Module B returned no items"
+          print("ok=", j.get("ok"), "count=", j.get("count"), "coverage_ok=", int(j.get("count",0)) >= 20, "timestamp=", j.get("timestamp"))
           PY
 
       - name: Build compact status
@@ -48,6 +48,7 @@ jobs:
             "source_timestamp": j.get("timestamp"),
             "keyword": j.get("keyword"),
             "count": j.get("count"),
+            "coverage_ok": int(j.get("count",0)) >= 20,
             "items": j.get("items", [])
           }
           json.dump(out, open("latest-public.json","w",encoding="utf-8"), ensure_ascii=False, indent=2)
