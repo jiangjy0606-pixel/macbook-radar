@@ -45,7 +45,7 @@ def read_request():
     if not line:
         return None, None
     try:
-        method, target, _ = line.decode("iso-8859-1").strip().split(" ", 2)
+        method, target, _ = line.decode("utf-8", errors="replace").strip().split(" ", 2)
     except Exception:
         return None, None
 
