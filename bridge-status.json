@@ -1,0 +1,10 @@
+{
+  "checked_at_utc": "2026-09-20T17:00:20.746242+00:00",
+  "accepted": false,
+  "reason": "empty_or_not_ok",
+  "ok": true,
+  "count": 0,
+  "ret": [
+    "FAIL_SYS_TOKEN_EXOIRED::令牌过期"
+  ]
+}
