@@ -39,6 +39,8 @@ Project-owned paths include:
 - xianyu-state.json
 - xianyu-delta.json
 - server/http_trigger_v2.py
+- server/refresh_mtop_token.py
+- server/run_v3.sh
 - server/uninstall_module_b_os.sh
 - server/MODULE_B_BOUNDARY.md
 - CHATGPT_XIANYU_SKILL.md
