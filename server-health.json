@@ -1,0 +1,41 @@
+{
+  "checked_at_utc": "2026-09-20T16:43:18.961389+00:00",
+  "host": "54.168.91.95",
+  "tcp": [
+    {
+      "port": 443,
+      "reachable": true,
+      "latency_ms": 120.5,
+      "error": null
+    },
+    {
+      "port": 8443,
+      "reachable": true,
+      "latency_ms": 127.3,
+      "error": null
+    },
+    {
+      "port": 9443,
+      "reachable": true,
+      "latency_ms": 120.2,
+      "error": null
+    },
+    {
+      "port": 1723,
+      "reachable": true,
+      "latency_ms": 120.2,
+      "error": null
+    },
+    {
+      "port": 18080,
+      "reachable": true,
+      "latency_ms": 119.6,
+      "error": null
+    }
+  ],
+  "notes": [
+    "TCP reachability only; this does not reconfigure or restart any VPN service.",
+    "UDP 500/4500 are not declared failed merely because a generic UDP probe gets no reply.",
+    "Module B generic search already completed successfully immediately before this check."
+  ]
+}
