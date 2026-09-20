@@ -9,7 +9,7 @@ from urllib.parse import unquote
 
 HOME = "/home/ec2-user"
 BASE = os.path.join(HOME, "module_b")
-RUN_SH = os.path.join(BASE, "run.sh")
+RUN_SH = os.path.join(BASE, "run_v3.sh")
 LATEST = os.path.join(BASE, "latest.json")
 TOKEN_FILE = os.path.join(HOME, ".config", "module_b", "token")
 COOLDOWN = 300
