@@ -8,11 +8,12 @@ mkdir -p "$DST/scripts" "$DST/references"
 
 curl -fsSL "$BASE/SKILL.md" -o "$DST/SKILL.md"
 curl -fsSL "$BASE/scripts/query_xianyu.py" -o "$DST/scripts/query_xianyu.py"
+curl -fsSL "$BASE/scripts/uninstall_codex_global.sh" -o "$DST/scripts/uninstall_codex_global.sh"
 curl -fsSL "$BASE/references/bridge-protocol.md" -o "$DST/references/bridge-protocol.md"
 curl -fsSL "$BASE/references/uninstall.md" -o "$DST/references/uninstall.md"
 curl -fsSL "$BASE/references/watchlist.example.json" -o "$DST/references/watchlist.example.json"
 
-chmod 755 "$DST/scripts/query_xianyu.py"
+chmod 755 "$DST/scripts/query_xianyu.py" "$DST/scripts/uninstall_codex_global.sh"
 
 echo "Installed: $DST"
 echo "Skill file: $DST/SKILL.md"
