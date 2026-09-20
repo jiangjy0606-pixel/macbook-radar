@@ -1,29 +1,29 @@
 {
-  "checked_at_utc": "2026-09-20T16:43:18.961389+00:00",
+  "checked_at_utc": "2026-09-20T17:17:44.570021+00:00",
   "host": "54.168.91.95",
   "tcp": [
     {
       "port": 443,
       "reachable": true,
-      "latency_ms": 120.5,
+      "latency_ms": 121.9,
       "error": null
     },
     {
       "port": 8443,
       "reachable": true,
-      "latency_ms": 127.3,
+      "latency_ms": 120.6,
       "error": null
     },
     {
       "port": 9443,
       "reachable": true,
-      "latency_ms": 120.2,
+      "latency_ms": 121.8,
       "error": null
     },
     {
       "port": 1723,
       "reachable": true,
-      "latency_ms": 120.2,
+      "latency_ms": 119.9,
       "error": null
     },
     {
