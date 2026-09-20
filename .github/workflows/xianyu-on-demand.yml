@@ -27,11 +27,13 @@ jobs:
           if not q:
               raise SystemExit("request.json keyword is empty")
           print("keyword="+q)
-          print("encoded="+urllib.parse.quote(q, safe=""))
+          import base64
+          q64=base64.urlsafe_b64encode(q.encode("utf-8")).decode("ascii").rstrip("=")
+          print("query64="+q64)
           with open("/tmp/query.txt","w",encoding="utf-8") as f:
               f.write(q)
-          with open("/tmp/encoded.txt","w",encoding="utf-8") as f:
-              f.write(urllib.parse.quote(q, safe=""))
+          with open("/tmp/query64.txt","w",encoding="ascii") as f:
+              f.write(q64)
           PY
 
       - name: Fetch Module B generic search
@@ -41,8 +43,8 @@ jobs:
           A='44fc07cdc69826dc'
           B='fe97de49d5ea8efe'
           C='4a56d3be1b5463d9'
-          Q="$(cat /tmp/encoded.txt)"
-          URL="https://d3uiiydii9q99b.cloudfront.net/search/${A}${B}${C}/${Q}"
+          Q64="$(cat /tmp/query64.txt)"
+          URL="https://d3uiiydii9q99b.cloudfront.net/search64/${A}${B}${C}/${Q64}"
           curl --fail --silent --show-error --max-time 90 "$URL" -o latest-query.json
           python3 - <<'PY'
           import json
