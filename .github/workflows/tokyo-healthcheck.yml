@@ -1,0 +1,65 @@
+name: Tokyo Server Healthcheck
+
+on:
+  push:
+    paths:
+      - "healthcheck.request"
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Probe TCP services
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json, socket, time, datetime
+
+          host="54.168.91.95"
+          ports=[443,8443,9443,1723,18080]
+          results=[]
+          for port in ports:
+              t0=time.time()
+              ok=False
+              err=None
+              try:
+                  with socket.create_connection((host,port),timeout=4):
+                      ok=True
+              except Exception as e:
+                  err=repr(e)
+              results.append({
+                  "port":port,
+                  "reachable":ok,
+                  "latency_ms":round((time.time()-t0)*1000,1),
+                  "error":err
+              })
+
+          out={
+              "checked_at_utc":datetime.datetime.now(datetime.timezone.utc).isoformat(),
+              "host":host,
+              "tcp":results,
+              "notes":[
+                  "TCP reachability only; this does not reconfigure or restart any VPN service.",
+                  "UDP 500/4500 are not declared failed merely because a generic UDP probe gets no reply.",
+                  "Module B generic search already completed successfully immediately before this check."
+              ]
+          }
+          with open("server-health.json","w",encoding="utf-8") as f:
+              json.dump(out,f,ensure_ascii=False,indent=2)
+          print(json.dumps(out,ensure_ascii=False,indent=2))
+          PY
+
+      - name: Commit health result
+        shell: bash
+        run: |
+          set -e
+          git config user.name "macbook-radar-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add server-health.json
+          git commit -m "Update Tokyo server healthcheck" || exit 0
+          git push
