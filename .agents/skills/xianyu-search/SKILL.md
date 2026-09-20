@@ -81,12 +81,16 @@ Only if the bridge path fails. A bridge failure is not evidence that Xianyu has 
 
 When the user asks to 定时蹲/监控 a product in ordinary ChatGPT:
 1. Create a recurring automation at a cadence appropriate to the product.
-2. Each run uses the GitHub command bus above.
-3. Compare with previous results when available.
-4. Prioritize newly appeared listings, meaningful price drops, and unusually cheap items.
-5. Do not repeatedly dump unchanged inventory.
-6. Keep Xianyu query frequency conservative; one broad query per run is preferred, with at most one narrower follow-up when justified.
-7. Include original item URLs in any alert.
+2. Use a stable ASCII watch id and update `requests/<watch-id>.json` each run.
+3. Read the matching `results/<watch-id>.json` produced by workflow `Xianyu Watch Request`.
+4. Verify returned keyword and freshness.
+5. Compare with previous results when available.
+6. Prioritize newly appeared listings, meaningful price drops, and unusually cheap items.
+7. Do not repeatedly dump unchanged inventory.
+8. Keep Xianyu query frequency conservative; one broad query per run is preferred, with at most one narrower follow-up when justified.
+9. Include original item URLs in any alert.
+
+This per-watch request/result path prevents collisions when multiple product watches run near the same time.
 
 If the user did not specify cadence, choose a reasonable one based on how fast the market moves. Do not exceed hourly automation frequency.
 
