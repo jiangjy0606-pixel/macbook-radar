@@ -1,0 +1,4 @@
+{
+  "request": "tokyo-server-healthcheck",
+  "reason": "verify VPN-priority services remain reachable after Xianyu search"
+}
