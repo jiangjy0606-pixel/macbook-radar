@@ -2,32 +2,45 @@
 
 ## Purpose
 
-Module B is a lightweight, on-demand bridge from Xianyu/Goofish to ChatGPT/Codex. It returns structured live listings and then exits, so the user's small Lightsail instance is not burdened by a permanent scraper.
+Module B is a lightweight, on-demand bridge from Xianyu/Goofish to ChatGPT/Codex. It returns structured live listings and then exits so the Tokyo Lightsail server keeps VPN as the primary workload.
 
-## Existing v1
+## Backward-compatible MacBook endpoint
 
 Request:
-
 `GET /run/<token>`
 
 Behavior:
 - searches `MacBook Pro`;
-- returns JSON;
-- current collector normally returns up to 30 items.
+- normally returns up to 30 items;
+- keeps the existing MacBook radar compatible.
 
-Expected shape:
+## Generic endpoint
+
+Request:
+`GET /search64/<token>/<base64url-utf8-keyword>`
+
+The keyword is UTF-8 encoded, then URL-safe base64 encoded without trailing `=`. This avoids Chinese-path encoding corruption through CloudFront/API Gateway.
+
+Example Python encoding:
+
+```python
+import base64
+q = base64.urlsafe_b64encode("老虎鱼线性电源".encode("utf-8")).decode("ascii").rstrip("=")
+```
+
+Response shape:
 
 ```json
 {
   "ok": true,
   "timestamp": 0,
-  "keyword": "MacBook Pro",
+  "keyword": "老虎鱼线性电源",
   "count": 30,
   "items": [
     {
       "title": "...",
-      "price": "¥6900",
-      "area": "...",
+      "price": "¥299",
+      "area": "北京",
       "seller": "...",
       "item_id": "...",
       "url": "https://www.goofish.com/item?id=..."
@@ -36,37 +49,29 @@ Expected shape:
 }
 ```
 
-## Generic v2
+The server must verify that the decoded keyword is non-empty and within the configured length limit. Search requests are serial, not parallel.
 
-Request:
+## Runner
 
-`GET /search/<token>/<URL-encoded-keyword>`
+The HTTP handler calls:
+`~/module_b/run_v3.sh <keyword>`
 
-Examples:
-- `MacBook%20Pro`
-- `徕卡%20M11`
-- `Dunhill%20烟斗`
-- `RTX%205090`
+`run_v3.sh` wraps the original `run.sh` and preserves its memory floor, flock, timeout, low-priority systemd execution, and existing collector behavior.
 
-Behavior:
-- URL-decode the keyword;
-- reject empty keywords;
-- pass that keyword to `~/module_b/run.sh`;
-- preserve existing memory floor, flock, timeout and cache behavior;
-- response schema stays identical to v1;
-- keep `/run/<token>` as a backward-compatible alias for `MacBook Pro`.
+## MTOP token refresh
+
+The MTOP `_m_h5_tk` token is short-lived. Module B v3:
+1. runs the original collector once;
+2. if the returned `ret` contains `FAIL_SYS_TOKEN_EXOIRED` / 令牌过期, invokes `refresh_mtop_token.py`;
+3. persists only refreshed `_m_h5_tk` / `_m_h5_tk_enc` values into the existing cookie file;
+4. retries the original collector exactly once.
+
+There is no retry loop. If refresh fails or verification/risk-control appears, stop and preserve the last good GitHub snapshot.
 
 ## Search strategy
 
-Use one broad keyword first. Only then run narrower variants if needed. Avoid high parallelism or dozens of near-duplicate queries in one burst.
-
-
-## Token refresh behavior
-
-The MTOP `_m_h5_tk` token is short-lived. Module B v3 wraps the original collector:
-1. run the original collector once;
-2. if the response contains `FAIL_SYS_TOKEN_EXOIRED` / 令牌过期, request a fresh MTOP token cookie;
-3. persist only the refreshed `_m_h5_tk` and `_m_h5_tk_enc` values into the existing cookie file;
-4. retry the original collector exactly once.
-
-Do not loop retries. If refresh fails or a verification/risk-control response appears, stop and preserve the last good GitHub snapshot instead of hammering Xianyu.
+- broad query first;
+- analyze the full returned set, normally up to 30 items;
+- at most one narrower follow-up when justified;
+- avoid bursts and concurrent queries;
+- stop extra querying on login/verification/risk-control responses.
