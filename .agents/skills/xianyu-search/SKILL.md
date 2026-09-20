@@ -1,98 +1,104 @@
 ---
 name: xianyu-search
-description: Search, monitor, compare, and shortlist current Xianyu/Goofish listings for any product using the user's Module B bridge. Use when the user asks to 闲鱼搜索/搜闲鱼/蹲货/捡漏/比价/找二手/监控某个商品 on Xianyu. This skill is product-agnostic: do not assume MacBook unless the user asks for it.
+description: Search, monitor, compare, shortlist, and schedule watches for current Xianyu/Goofish listings for any product using the user's Module B bridge. Trigger on phrases such as 闲鱼搜索、搜闲鱼、蹲货、捡漏、比价、找二手、监控某个商品、使用我的咸鱼搜索技能. Product-agnostic: never assume MacBook unless requested.
 ---
 
 # Xianyu Search
 
-Use the user's Xianyu Module B collector as the preferred source for current listings. The goal is to return actionable listings, not a text-only market essay.
+This is the user's reusable Xianyu/Goofish search capability. It is not MacBook-specific.
 
-## Core rules
+## Goal
 
-1. Parse the user's product intent into:
-   - one broad keyword first;
-   - then up to 5 narrower keywords only when needed.
-2. Search broad-first so the result set also provides a live market baseline.
-3. Prefer fresh bridge data over generic web search.
-4. Only count currently visible/current listings as live inventory. Sold/expired listings may be used only as historical reference.
-5. Every shortlisted item MUST include:
-   - title;
-   - price;
-   - area;
-   - seller when available;
-   - item_id;
-   - a directly clickable original Xianyu/Goofish URL.
-   Never return a “best candidate” that the user cannot open.
-6. Preserve the raw listing facts. Do not invent RAM, storage, condition, battery, repair history, lock status, authenticity, or seller claims.
-7. For expensive electronics, explicitly surface risk words such as:
-   - 监管 / MDM / DEP / ADE / Remote Management / bypass;
-   - ID锁 / Activation Lock / 隐藏锁;
-   - 扩容 / 改盘;
-   - 主板维修 / 进液 / 屏幕故障 / 拆修.
-8. Distinguish:
-   - “值得立即核验” = price/description is interesting but key facts are missing;
-   - “值得出手” = listing is sufficiently verified for the user's stated risk tolerance.
-9. If the user asks to monitor a new product, do not reuse MacBook-specific price rules. Build a new baseline from that product's own live results.
+Return actionable live listings with original clickable item URLs, build a market baseline from enough items, and support recurring watches without hammering Xianyu.
 
-## Data-source order
+## Search policy
 
-### A. GitHub bridge cache
+1. Start with one broad keyword.
+2. Read and analyze the full returned set, normally up to 30 items. Never stop at the first 3.
+3. If the broad set is noisy or misses the user's target, do at most one narrower follow-up query at a time.
+4. Never parallelize Xianyu searches. Avoid bursts. If the bridge returns login/verification/risk-control/abnormal ret, stop extra queries and use the most recent successful snapshot instead of retrying repeatedly.
+5. For a new product category, build a fresh price baseline from its own live results. Never import MacBook price rules into cameras, HiFi, pipes, etc.
+6. Only treat current visible listings as live inventory. Sold/expired items are historical only.
+7. De-duplicate by item_id before judging the market.
+
+## Mandatory output fields for every shortlisted item
+
+- title
+- price
+- area
+- seller when available
+- item_id
+- original Xianyu/Goofish URL that the user can click directly
+- known defects/claims
+- missing facts that must be verified before purchase
+
+Never promote a candidate without a usable original listing URL.
+
+## Risk handling
+
+For expensive electronics, surface relevant risk terms and missing checks, including:
+- 监管 / MDM / ABM / DEP / ADE / Remote Management / bypass
+- ID锁 / Activation Lock / 隐藏锁
+- 扩容 / 改盘
+- 主板维修 / 进液 / 屏幕故障 / 拆修
+
+Do not invent condition, battery, authenticity, repair history, lock status, RAM, storage, model, or seller claims.
+
+## Preferred data paths
+
+### 1. Codex/local direct query
+
+Use:
+`~/.agents/skills/xianyu-search/scripts/query_xianyu.py "<keyword>" --limit 30`
+
+The generic endpoint uses base64url keyword transport so Chinese queries survive CloudFront/API Gateway unchanged.
+
+- MacBook Pro compatibility endpoint: `/run/<token>`
+- Generic endpoint: `/search64/<token>/<base64url-utf8-keyword>`
+
+### 2. ChatGPT via connected GitHub command bus
 
 Repository:
-- `jiangjy0606-pixel/macbook-radar`
+`jiangjy0606-pixel/macbook-radar`
 
-For the existing MacBook radar, read:
-- `latest-public.json`
+For one-off generic searches:
+1. Update `request.json` to contain the requested keyword.
+2. Wait for workflow `Xianyu On Demand` to complete.
+3. Read `latest-query.json`.
+4. Verify `ok=true`, returned `keyword` exactly matches the request, and data is fresh.
+5. Analyze all returned items, then present only the useful candidates.
 
-Use it only when:
-- `bridge_ok == true`;
-- `count >= 3`;
-- `keyword` matches the requested search intent;
-- `fetched_at_utc` is fresh enough for the task (normally <= 2 hours; tighter for fast-moving searches).
+For the MacBook radar:
+- broad cached snapshot: `latest-public.json`
+- change feed: `xianyu-delta.json`
+- rolling state: `xianyu-state.json`
 
-### B. Live Module B endpoint
+### 3. Public-page fallback
 
-Current v1 endpoint supports the default keyword `MacBook Pro`:
-- `/run/<token>`
+Only if the bridge path fails. A bridge failure is not evidence that Xianyu has no listings.
 
-Generic v2 endpoint is:
-- `/search/<token>/<URL-encoded-keyword>`
+## Recurring watch / 定时蹲
 
-When generic v2 is installed, use it for arbitrary products. Search keywords serially, not concurrently.
+When the user asks to 定时蹲/监控 a product in ordinary ChatGPT:
+1. Create a recurring automation at a cadence appropriate to the product.
+2. Each run uses the GitHub command bus above.
+3. Compare with previous results when available.
+4. Prioritize newly appeared listings, meaningful price drops, and unusually cheap items.
+5. Do not repeatedly dump unchanged inventory.
+6. Keep Xianyu query frequency conservative; one broad query per run is preferred, with at most one narrower follow-up when justified.
+7. Include original item URLs in any alert.
 
-The helper script in `scripts/query_xianyu.py` implements this contract.
-
-### C. ChatGPT on-demand bridge via GitHub
-
-When ChatGPT cannot call the CloudFront endpoint directly, use the connected GitHub repository as the command bus:
-
-1. Update `request.json` in `jiangjy0606-pixel/macbook-radar` with:
-   ```json
-   {"keyword":"<requested product>"}
-   ```
-2. The `Xianyu On Demand` workflow runs automatically and calls Module B generic v2.
-3. Read `latest-query.json` from the same repository.
-4. Verify that `keyword` matches the request and the result is fresh before presenting candidates.
-
-This is the preferred reusable path for new ChatGPT conversations.
-
-### D. Fallback
-
-If bridge access fails, try public Xianyu/Goofish search pages only as a fallback. Never treat a bridge failure as proof that Xianyu has no listings.
-
-## Output
-
-For a one-off search:
-- Start with a compact live-market summary.
-- Then show at most 5 strongest candidates.
-- For each candidate include the direct original item link.
-- State what must be verified before purchase.
-
-For a watch/蹲货 request:
-- Record the exact keywords and the user's acceptable defects/risks.
-- Prefer newly appeared listings and meaningful price drops.
-- Alert on actionable candidates instead of repeatedly dumping the same inventory.
+If the user did not specify cadence, choose a reasonable one based on how fast the market moves. Do not exceed hourly automation frequency.
 
 ## MacBook-specific behavior
 
-Only when the requested product is MacBook Pro, apply the user's existing MacBook radar rules from the repository/task configuration. Do not copy those rules to other product categories.
+Only when the requested item is MacBook Pro, use the user's separate MacBook global radar rules and price/risk criteria. The MacBook radar combines:
+- Module B for Xianyu collection
+- Module A for global public-market coverage, FX conversion, risk analysis, and cross-market ranking
+
+## Uninstall
+
+If the user asks to remove this capability, read:
+`references/uninstall.md`
+
+The uninstall boundary is strict: remove Module B/Xianyu-search assets only. Never remove or reconfigure xray, v2ray, strongSwan/charon, pptpd, nginx, or unrelated VPN/network services.
