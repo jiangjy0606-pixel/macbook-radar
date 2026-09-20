@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import base64
 import json
 import os
 import subprocess
@@ -69,6 +70,18 @@ def resolve_keyword(target, token):
 
     if path == f"/run/{token}":
         return "MacBook Pro"
+
+    prefix64 = f"/search64/{token}/"
+    if path.startswith(prefix64):
+        raw = path[len(prefix64):]
+        try:
+            padded = raw + "=" * (-len(raw) % 4)
+            keyword = base64.urlsafe_b64decode(padded.encode("ascii")).decode("utf-8").strip()
+        except Exception:
+            return None
+        if not keyword or len(keyword) > MAX_KEYWORD_LEN:
+            return None
+        return keyword
 
     prefix = f"/search/{token}/"
     if path.startswith(prefix):
