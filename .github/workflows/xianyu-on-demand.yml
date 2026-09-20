@@ -1,0 +1,67 @@
+name: Xianyu On Demand
+
+on:
+  push:
+    paths:
+      - "request.json"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  search:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read keyword
+        id: q
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json, urllib.parse
+          j=json.load(open("request.json",encoding="utf-8"))
+          q=str(j.get("keyword","")).strip()
+          if not q:
+              raise SystemExit("request.json keyword is empty")
+          print("keyword="+q)
+          print("encoded="+urllib.parse.quote(q, safe=""))
+          with open("/tmp/query.txt","w",encoding="utf-8") as f:
+              f.write(q)
+          with open("/tmp/encoded.txt","w",encoding="utf-8") as f:
+              f.write(urllib.parse.quote(q, safe=""))
+          PY
+
+      - name: Fetch Module B generic search
+        shell: bash
+        run: |
+          set -euo pipefail
+          A='44fc07cdc69826dc'
+          B='fe97de49d5ea8efe'
+          C='4a56d3be1b5463d9'
+          Q="$(cat /tmp/encoded.txt)"
+          URL="https://d3uiiydii9q99b.cloudfront.net/search/${A}${B}${C}/${Q}"
+          curl --fail --silent --show-error --max-time 90 "$URL" -o latest-query.json
+          python3 - <<'PY'
+          import json
+          j=json.load(open("latest-query.json",encoding="utf-8"))
+          assert j.get("ok") is True, "Module B returned ok != true"
+          assert int(j.get("count",0)) >= 1, "Module B returned no items"
+          print("ok=",j.get("ok"),"keyword=",j.get("keyword"),"count=",j.get("count"))
+          PY
+
+      - name: Commit result
+        shell: bash
+        run: |
+          set -e
+          git config user.name "macbook-radar-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add latest-query.json
+          if git diff --cached --quiet; then
+            echo "No result change"
+          else
+            git commit -m "Update on-demand Xianyu result"
+            git push
+          fi
