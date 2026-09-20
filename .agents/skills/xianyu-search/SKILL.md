@@ -62,7 +62,21 @@ When generic v2 is installed, use it for arbitrary products. Search keywords ser
 
 The helper script in `scripts/query_xianyu.py` implements this contract.
 
-### C. Fallback
+### C. ChatGPT on-demand bridge via GitHub
+
+When ChatGPT cannot call the CloudFront endpoint directly, use the connected GitHub repository as the command bus:
+
+1. Update `request.json` in `jiangjy0606-pixel/macbook-radar` with:
+   ```json
+   {"keyword":"<requested product>"}
+   ```
+2. The `Xianyu On Demand` workflow runs automatically and calls Module B generic v2.
+3. Read `latest-query.json` from the same repository.
+4. Verify that `keyword` matches the request and the result is fresh before presenting candidates.
+
+This is the preferred reusable path for new ChatGPT conversations.
+
+### D. Fallback
 
 If bridge access fails, try public Xianyu/Goofish search pages only as a fallback. Never treat a bridge failure as proof that Xianyu has no listings.
 
