@@ -16,24 +16,28 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Read keyword
-        id: q
+      - name: Read request
         shell: bash
         run: |
           python3 - <<'PY'
-          import json, urllib.parse
+          import base64, json, re
           j=json.load(open("request.json",encoding="utf-8"))
           q=str(j.get("keyword","")).strip()
+          rid=str(j.get("request_id","")).strip()
           if not q:
               raise SystemExit("request.json keyword is empty")
-          print("keyword="+q)
-          import base64
+          if not rid:
+              raise SystemExit("request.json request_id is empty")
+          safe=re.sub(r"[^A-Za-z0-9._-]+","-",rid).strip("-")
+          if not safe:
+              raise SystemExit("request_id is not usable")
           q64=base64.urlsafe_b64encode(q.encode("utf-8")).decode("ascii").rstrip("=")
-          print("query64="+q64)
-          with open("/tmp/query.txt","w",encoding="utf-8") as f:
-              f.write(q)
-          with open("/tmp/query64.txt","w",encoding="ascii") as f:
-              f.write(q64)
+          open("/tmp/query.txt","w",encoding="utf-8").write(q)
+          open("/tmp/query64.txt","w",encoding="ascii").write(q64)
+          open("/tmp/request_id.txt","w",encoding="utf-8").write(rid)
+          open("/tmp/request_id_safe.txt","w",encoding="ascii").write(safe)
+          print("keyword=",q)
+          print("request_id=",rid)
           PY
 
       - name: Fetch Module B generic search
@@ -45,14 +49,26 @@ jobs:
           C='4a56d3be1b5463d9'
           Q64="$(cat /tmp/query64.txt)"
           URL="https://d3uiiydii9q99b.cloudfront.net/search64/${A}${B}${C}/${Q64}"
-          curl --fail --silent --show-error --max-time 90 "$URL" -o latest-query.json
+          curl --fail --silent --show-error --max-time 90 "$URL" -o /tmp/module-b-result.json
           python3 - <<'PY'
-          import json
-          j=json.load(open("latest-query.json",encoding="utf-8"))
+          import json, datetime
+          j=json.load(open("/tmp/module-b-result.json",encoding="utf-8"))
           assert j.get("ok") is True, "Module B returned ok != true"
-          assert int(j.get("count",0)) >= 1, "Module B returned no items"
-          print("ok=",j.get("ok"),"keyword=",j.get("keyword"),"count=",j.get("count"))
+          assert int(j.get("count",0) or 0) >= 1, "Module B returned no items"
+          rid=open("/tmp/request_id.txt",encoding="utf-8").read().strip()
+          j["request_id"]=rid
+          j["bridge_completed_at_utc"]=datetime.datetime.now(datetime.timezone.utc).isoformat()
+          json.dump(j,open("latest-query.json","w",encoding="utf-8"),ensure_ascii=False,indent=2)
+          print("ok=",j.get("ok"),"keyword=",j.get("keyword"),"count=",j.get("count"),"request_id=",rid)
           PY
+
+      - name: Write request-specific result
+        shell: bash
+        run: |
+          set -euo pipefail
+          SAFE="$(cat /tmp/request_id_safe.txt)"
+          mkdir -p results/on-demand
+          cp latest-query.json "results/on-demand/${SAFE}.json"
 
       - name: Commit result
         shell: bash
@@ -60,10 +76,7 @@ jobs:
           set -e
           git config user.name "macbook-radar-bot"
           git config user.email "actions@users.noreply.github.com"
-          git add latest-query.json
-          if git diff --cached --quiet; then
-            echo "No result change"
-          else
-            git commit -m "Update on-demand Xianyu result"
-            git push
-          fi
+          SAFE="$(cat /tmp/request_id_safe.txt)"
+          git add latest-query.json "results/on-demand/${SAFE}.json"
+          git commit -m "Update on-demand Xianyu result: ${SAFE}"
+          git push
