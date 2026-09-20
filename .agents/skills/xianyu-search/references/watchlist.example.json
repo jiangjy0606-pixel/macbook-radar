@@ -1,0 +1,17 @@
+{
+  "watches": [
+    {
+      "name": "MacBook Pro radar",
+      "broad_keyword": "MacBook Pro",
+      "narrow_keywords": [
+        "M1 Pro 32G",
+        "M1 Max 32G",
+        "M1 Max 64G",
+        "M2 Pro 32G",
+        "M3 Pro 36G",
+        "M4 Pro 24G"
+      ],
+      "notes": "Example only. Add other product categories with their own price and risk rules."
+    }
+  ]
+}
