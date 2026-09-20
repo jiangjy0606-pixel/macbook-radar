@@ -1,0 +1,67 @@
+name: Xianyu Bridge
+
+on:
+  push:
+    paths:
+      - ".github/workflows/xianyu-bridge.yml"
+  schedule:
+    - cron: "5 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch Module B
+        shell: bash
+        run: |
+          set -euo pipefail
+          A='44fc07cdc69826dc'
+          B='fe97de49d5ea8efe'
+          C='4a56d3be1b5463d9'
+          URL="https://d3uiiydii9q99b.cloudfront.net/run/${A}${B}${C}"
+          curl --fail --silent --show-error --max-time 90 "$URL" -o latest.json
+          python3 - <<'PY'
+          import json
+          j=json.load(open("latest.json", encoding="utf-8"))
+          assert j.get("ok") is True, "Module B returned ok != true"
+          assert int(j.get("count", 0)) >= 3, "Module B returned fewer than 3 items"
+          print("ok=", j.get("ok"), "count=", j.get("count"), "timestamp=", j.get("timestamp"))
+          PY
+
+      - name: Build compact status
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json, datetime
+          j=json.load(open("latest.json", encoding="utf-8"))
+          out={
+            "bridge_ok": True,
+            "fetched_at_utc": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            "source_timestamp": j.get("timestamp"),
+            "keyword": j.get("keyword"),
+            "count": j.get("count"),
+            "items": j.get("items", [])
+          }
+          json.dump(out, open("latest-public.json","w",encoding="utf-8"), ensure_ascii=False, indent=2)
+          PY
+
+      - name: Commit latest data
+        shell: bash
+        run: |
+          set -e
+          git config user.name "macbook-radar-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add latest.json latest-public.json
+          if git diff --cached --quiet; then
+            echo "No data change"
+          else
+            git commit -m "Update Xianyu snapshot"
+            git push
+          fi
