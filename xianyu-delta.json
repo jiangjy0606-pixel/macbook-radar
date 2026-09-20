@@ -1,11 +1,10 @@
 {
-  "bridge_ok": true,
-  "fetched_at_utc": "2026-09-20T17:17:07.812258+00:00",
-  "source_timestamp": 1789924627,
+  "updated_at_utc": "2026-09-20T17:17:07.861668+00:00",
   "keyword": "MacBook Pro",
-  "count": 30,
-  "coverage_ok": true,
-  "items": [
+  "added_count": 30,
+  "price_change_count": 0,
+  "removed_count": 0,
+  "added": [
     {
       "title": "几乎全新MacBook Pro 14，深空灰色，8G内存+5 12G硬盘，M3处理器。原装正品，无拆无修，电池健康100.充电21次。屏幕键盘保存很好，功能全部正常，带原装充电器。  支持包邮，喜欢直接拍，细节私聊发图～",
       "price": "¥6200",
@@ -246,5 +245,7 @@
       "item_id": "1083829110453",
       "url": "https://www.goofish.com/item?id=1083829110453"
     }
-  ]
+  ],
+  "price_changes": [],
+  "removed": []
 }

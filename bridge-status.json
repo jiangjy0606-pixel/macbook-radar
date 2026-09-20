@@ -1,10 +1,8 @@
 {
-  "checked_at_utc": "2026-09-20T17:01:00.453308+00:00",
-  "accepted": false,
-  "reason": "empty_or_not_ok",
-  "ok": true,
-  "count": 0,
-  "ret": [
-    "FAIL_SYS_TOKEN_EXOIRED::令牌过期"
-  ]
+  "checked_at_utc": "2026-09-20T17:17:07.761300+00:00",
+  "accepted": true,
+  "reason": "ok",
+  "count": 30,
+  "coverage_ok": true,
+  "source_timestamp": 1789924627
 }
