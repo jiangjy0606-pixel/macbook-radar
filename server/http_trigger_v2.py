@@ -55,6 +55,15 @@ def read_request():
             break
     return method, target
 
+def repair_mojibake(s):
+    try:
+        fixed = s.encode("latin-1").decode("utf-8")
+        if fixed != s:
+            return fixed
+    except Exception:
+        pass
+    return s
+
 def resolve_keyword(target, token):
     path = target.split("?", 1)[0]
 
@@ -65,7 +74,7 @@ def resolve_keyword(target, token):
     if path.startswith(prefix):
         raw = path[len(prefix):]
         try:
-            keyword = unquote(raw).strip()
+            keyword = repair_mojibake(unquote(raw).strip())
         except Exception:
             return None
         if not keyword or len(keyword) > MAX_KEYWORD_LEN:
