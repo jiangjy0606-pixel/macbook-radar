@@ -1,8 +1,10 @@
 {
-  "checked_at_utc": "2026-09-21T14:05:50.561649+00:00",
-  "accepted": true,
-  "reason": "ok",
-  "count": 30,
-  "coverage_ok": true,
-  "source_timestamp": 1789999550
+  "checked_at_utc": "2026-09-21T14:38:31.507269+00:00",
+  "accepted": false,
+  "reason": "empty_or_not_ok",
+  "ok": true,
+  "count": 0,
+  "ret": [
+    "RGV587_ERROR::SM::哎哟喂,被挤爆啦,请稍后重试!"
+  ]
 }
