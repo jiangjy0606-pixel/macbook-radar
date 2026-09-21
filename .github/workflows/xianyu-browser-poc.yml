@@ -1,0 +1,60 @@
+name: Xianyu Browser PoC
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/xianyu-browser-poc.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install Playwright
+        run: |
+          pip install playwright
+          python -m playwright install --with-deps chromium
+      - name: Probe Goofish search
+        run: |
+          cat > /tmp/probe.py <<'PY'
+          import asyncio, json, time
+          from playwright.async_api import async_playwright
+
+          async def main():
+              out={"checked_at":int(time.time()),"keyword":"MacBook Pro","ok":False}
+              async with async_playwright() as p:
+                  browser=await p.chromium.launch(headless=True)
+                  page=await browser.new_page(locale="zh-CN")
+                  try:
+                      r=await page.goto("https://www.goofish.com/search?q=MacBook%20Pro", wait_until="domcontentloaded", timeout=45000)
+                      await page.wait_for_timeout(7000)
+                      out["http_status"]=r.status if r else None
+                      out["url"]=page.url
+                      out["title"]=await page.title()
+                      body=(await page.locator("body").inner_text())[:5000]
+                      out["body_sample"]=body
+                      out["challenge"]=any(x in body for x in ["非法访问","验证码","滑块","RGV587","FAIL_SYS_USER_VALIDATE"])
+                      out["ok"]=bool(r and r.status < 400 and not out["challenge"])
+                  except Exception as e:
+                      out["error"]=repr(e)
+                  await browser.close()
+              with open("browser-poc-result.json","w",encoding="utf-8") as f:
+                  json.dump(out,f,ensure_ascii=False,indent=2)
+          asyncio.run(main())
+          PY
+          python /tmp/probe.py
+      - name: Commit probe result
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add browser-poc-result.json
+          git commit -m "Record Xianyu browser PoC result" || exit 0
+          git push
