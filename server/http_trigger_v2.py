@@ -12,7 +12,9 @@ BASE = os.path.join(HOME, "module_b")
 RUN_SH = os.path.join(BASE, "run_v3.sh")
 LATEST = os.path.join(BASE, "latest.json")
 TOKEN_FILE = os.path.join(HOME, ".config", "module_b", "token")
-COOLDOWN = 300
+COOLDOWN = 3600
+BACKOFF_FILE = os.path.join(BASE, "backoff.json")
+RATE_LIMIT_BACKOFF = 6 * 3600
 MAX_KEYWORD_LEN = 120
 
 def send(status, obj):
@@ -121,6 +123,25 @@ def main():
 
     now = int(time.time())
 
+    # Respect upstream MTOP/Goofish rate-limit backoff. During the window,
+    # serve the last good snapshot instead of launching another collector.
+    try:
+        if os.path.exists(BACKOFF_FILE):
+            b = load_json(BACKOFF_FILE)
+            until = int(b.get("until") or 0)
+            if now < until and os.path.exists(LATEST):
+                latest = load_json(LATEST)
+                if latest.get("ok") is True:
+                    latest["cached"] = True
+                    latest["backoff"] = True
+                    latest["backoff_until"] = until
+                    latest["backoff_reason"] = b.get("reason")
+                    latest["requested_keyword"] = keyword
+                    send(200, latest)
+                    return
+    except Exception:
+        pass
+
     try:
         if os.path.exists(LATEST):
             latest = load_json(LATEST)
@@ -165,6 +186,16 @@ def main():
     latest["cached"] = False
     latest["runner_exit_code"] = p.returncode
     latest["requested_keyword"] = keyword
+
+    # RGV587 is an upstream throttling/risk-control response. Back off instead
+    # of hammering MTOP every scheduled run. Keep last-good data untouched.
+    ret_text = " ".join(str(x) for x in (latest.get("ret") or []))
+    if "RGV587" in ret_text:
+        try:
+            with open(BACKOFF_FILE, "w", encoding="utf-8") as f:
+                json.dump({"until": now + RATE_LIMIT_BACKOFF, "reason": "RGV587", "set_at": now}, f)
+        except Exception:
+            pass
 
     if p.returncode != 0 and latest.get("ok") is not True:
         latest.setdefault("error", "COLLECTOR_FAILED")
