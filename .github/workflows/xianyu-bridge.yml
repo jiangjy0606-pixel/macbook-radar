@@ -6,8 +6,6 @@ on:
   push:
     paths:
       - ".github/workflows/xianyu-bridge.yml"
-  schedule:
-    - cron: "17 * * * *"
   workflow_dispatch:
 
 permissions:
