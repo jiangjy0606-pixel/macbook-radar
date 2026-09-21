@@ -1,8 +1,8 @@
 {
-  "checked_at_utc": "2026-09-21T00:07:45.249183+00:00",
+  "checked_at_utc": "2026-09-21T00:41:57.976043+00:00",
   "accepted": true,
   "reason": "ok",
   "count": 30,
   "coverage_ok": true,
-  "source_timestamp": 1789949264
+  "source_timestamp": 1789951317
 }
