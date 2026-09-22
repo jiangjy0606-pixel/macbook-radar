@@ -1,8 +1,13 @@
 {
   "name": "Module B2 Xianyu Browser PoC",
   "image": "mcr.microsoft.com/devcontainers/python:1-3.12-bookworm",
-  "runArgs": ["--init", "--shm-size=1g"],
-  "forwardPorts": [6080],
+  "runArgs": [
+    "--init",
+    "--shm-size=1g"
+  ],
+  "forwardPorts": [
+    6080
+  ],
   "portsAttributes": {
     "6080": {
       "label": "Module B2 noVNC",
@@ -11,5 +16,5 @@
     }
   },
   "postCreateCommand": "bash module-b2-poc/setup.sh",
-  "postStartCommand": "bash module-b2-poc/start_desktop.sh || true"
+  "postStartCommand": "bash module-b2-poc/start_desktop.sh && nohup bash module-b2-poc/autorun_l0.sh >/home/vscode/.xianyu-b2/results/autorun.log 2>&1 &"
 }
