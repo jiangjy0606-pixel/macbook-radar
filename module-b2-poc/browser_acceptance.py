@@ -13,7 +13,7 @@ PROFILE.mkdir(parents=True, exist_ok=True)
 RESULTS.mkdir(parents=True, exist_ok=True)
 
 URL = "https://www.goofish.com/"
-DISPLAY = os.environ.get("DISPLAY") or ":1"
+DISPLAY = ":99"
 os.environ["DISPLAY"] = DISPLAY
 
 challenge_terms = ["非法访问", "正常浏览器访问", "验证码", "安全验证", "访问异常"]
@@ -50,22 +50,19 @@ def display_ready():
 def ensure_desktop():
     if display_ready():
         return True
-    init = Path("/usr/local/share/desktop-init.sh")
-    if init.exists():
-        env = os.environ.copy()
-        env["DISPLAY"] = DISPLAY
-        try:
+    log = RESULTS / "desktop-start-from-test.log"
+    try:
+        with log.open("w") as fh:
             subprocess.run(
-                [str(init), "true"],
-                env=env,
-                stdout=(RESULTS / "desktop-init.log").open("w"),
+                ["bash", "module-b2-poc/start_desktop.sh"],
+                stdout=fh,
                 stderr=subprocess.STDOUT,
-                timeout=20,
+                timeout=45,
                 check=False,
             )
-        except Exception:
-            pass
-    for _ in range(15):
+    except Exception as e:
+        log.write_text(f"{type(e).__name__}: {e}\n", encoding="utf-8")
+    for _ in range(20):
         if display_ready():
             return True
         time.sleep(1)
@@ -74,8 +71,8 @@ def ensure_desktop():
 if not ensure_desktop():
     result["status"] = "DESKTOP_ERROR"
     result["note"] = (
-        f"No X display available on {DISPLAY}. "
-        "The desktop-lite service did not start; see ~/.xianyu-b2/results/desktop-init.log."
+        "No X display available on :99 after starting the standalone "
+        "Xvfb/noVNC desktop. See ~/.xianyu-b2/results/*.log."
     )
 else:
     try:
@@ -102,14 +99,18 @@ else:
                 "challenge": challenge,
                 "login_required": login_required,
                 "status": "BLOCKED" if challenge else ("LOGIN_REQUIRED" if login_required else "NORMAL"),
-                "note": "No CAPTCHA or challenge bypass is attempted. Complete any legitimate login manually in the noVNC Chrome window."
+                "note": "No CAPTCHA or challenge bypass is attempted. Legitimate login can be completed manually in the private noVNC Chrome window."
             })
             page.screenshot(path=str(RESULTS / "latest.png"), full_page=False)
-            time.sleep(15)
+            time.sleep(30)
             context.close()
     except Exception as e:
         result["note"] = f"{type(e).__name__}: {e}"
 
-RESULTS.joinpath("browser-acceptance-result.json").write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
-REPO_RESULT.write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
+RESULTS.joinpath("browser-acceptance-result.json").write_text(
+    json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8"
+)
+REPO_RESULT.write_text(
+    json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8"
+)
 print(json.dumps(result, ensure_ascii=False, indent=2))
