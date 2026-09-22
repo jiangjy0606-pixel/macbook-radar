@@ -2,6 +2,9 @@
   "name": "Module B2 Xianyu Browser PoC",
   "image": "mcr.microsoft.com/devcontainers/python:1-3.12-bookworm",
   "runArgs": ["--init", "--shm-size=1g"],
+  "containerEnv": {
+    "DISPLAY": ":1"
+  },
   "forwardPorts": [6080],
   "portsAttributes": {
     "6080": {
