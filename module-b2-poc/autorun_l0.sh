@@ -6,6 +6,12 @@ mkdir -p "$RESULTS"
 cd "$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 sleep 5
 
+# A Codespace can be behind the branch after we improve the PoC.
+# Fast-forward only; never overwrite local browser/session state.
+git fetch origin module-b2-poc >>"$RESULTS/update.log" 2>&1 || true
+git merge --ff-only origin/module-b2-poc >>"$RESULTS/update.log" 2>&1 || true
+
+export DISPLAY=:99
 python module-b2-poc/browser_acceptance.py >"$RESULTS/l0.stdout.log" 2>&1
 rc=$?
 
@@ -15,9 +21,9 @@ cp module-b2-poc/browser-acceptance-result.json "$RESULTS/browser-acceptance-res
 if command -v git >/dev/null 2>&1 && [ -f module-b2-poc/browser-acceptance-result.json ]; then
   git add module-b2-poc/browser-acceptance-result.json
   if ! git diff --cached --quiet; then
-    git -c user.name="module-b2-poc" -c user.email="module-b2-poc@users.noreply.github.com"       commit -m "Module B2 PoC: publish L0 acceptance result" >>"$RESULTS/publish.log" 2>&1 || true
+    git -c user.name="module-b2-poc" -c user.email="module-b2-poc@users.noreply.github.com" \
+      commit -m "Module B2 PoC: publish L0 acceptance result" >>"$RESULTS/publish.log" 2>&1 || true
     git push origin HEAD:module-b2-poc >>"$RESULTS/publish.log" 2>&1 || true
   fi
 fi
-
 exit "$rc"
