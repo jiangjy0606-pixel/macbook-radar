@@ -1,10 +1,13 @@
 {
   "checked_at": 1790317461,
   "keyword": "MacBook Pro",
-  "ok": true,
+  "ok": false,
   "http_status": 200,
   "url": "https://www.goofish.com/search?q=MacBook%20Pro",
   "title": "MacBook Pro_闲鱼",
   "body_sample": "搜索\n笔记本电脑\n电动车\n巧克力\n打印机\n手机挂绳\n苹果手机壳\n手机支架\niphone\n休闲裤\n牛仔裤\n登录\n订单\n网页版发闲置功能又升级啦！\n综合\n新降价\n新发布\n价格\n-\n确定\n区域\n1/1\n个人闲置\n验货宝\n验号担保\n包邮\n超赞鱼小铺\n全新\n严选\n转卖\n加载中...\n发闲置\n消息\nAPP\n反馈\n客服\n回顶部\n阿里巴巴集团\n淘宝\n天猫\n1688\n一淘\n阿里健康\n全球速卖通\n阿里巴巴国际站\n高德\n飞猪\n优酷\n大麦\n阿里影业\n钉钉\n支付宝\n阿里妈妈\n阿里云\n统一社会信用代码：91330110MA2H1CFF2D\n增值电信业务经营许可证：浙B2-20201551\n增值电信业务经营许可证（跨地区）：B2-20241485\n网络食品销售第三方平台提供者备案：浙网食A33000101\n二手车经纪企业备案：91330110MA2H1CFF2D\n出版物网络交易平台服务经营备案：新出发浙备字第2025003号\n互联网药品信息服务备案：浙网药信备字[2026]00256号\n广播电视节目制作经营许可证：（浙）字第07629号\n营业性演出许可证：浙演经330101120064\n集邮市场开办者备案：杭集邮备006\nAPP备案号：浙ICP备20016791号-2A\n闲鱼社区隐私政策\n软件许可协议\n闲鱼社区用户服务协议\n闲鱼规则\n意见征集\n算法备案\n浙公网安备33011002014818号\n电子营业执照\n© Goofish.com 版权所有\n\n推动绿色发展，促进闲置流通\n\n《促进绿色消费实施方案》\n《关于加快废旧物资循环利用体系建设的指导意见》\n登录后可以更懂你，推荐你喜欢的商品！\n立即登录\nX",
-  "challenge": false
+  "challenge": false,
+  "status": "LOGIN_REQUIRED_OR_LOADING",
+  "item_count": 0,
+  "note": "Headed Chrome loaded the page shell, but no product listings were observed; prior ok=true was a false positive."
 }
