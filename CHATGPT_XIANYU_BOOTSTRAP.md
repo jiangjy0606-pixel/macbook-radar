@@ -1,5 +1,7 @@
 # ChatGPT Xianyu bootstrap
 
+> **2026-09-25 service status:** The former Tokyo Module B endpoint was removed to restore the VPN host. Its three GitHub search/watch workflows are disabled. Do not submit `request.json` or claim that `latest-query.json` / `latest-public.json` is fresh. No replacement online search worker has passed acceptance yet. Tell the user when live search is unavailable; an indexed web search, if offered, is incomplete and delayed.
+
 When the user says any of these:
 - 使用我的咸鱼搜索技能
 - 使用我的闲鱼搜索技能
@@ -17,7 +19,9 @@ Then read, in this order:
 1. `.agents/skills/xianyu-search/SKILL.md`
 2. `CHATGPT_XIANYU_SKILL.md`
 
-## One-off search — must complete in the same assistant turn
+## One-off search — historical protocol, currently inactive
+
+Only after a replacement worker is deployed and its workflow re-enabled and verified:
 
 1. Create a unique ASCII `request_id` containing the keyword slug plus current timestamp.
 2. Update `request.json` with the exact keyword and that `request_id`.
@@ -39,7 +43,7 @@ Important: never tell the user “workflow还没跑完，等一下” merely bec
 
 ## Recurring watch
 
-1. Create a ChatGPT automation at the requested cadence.
+Do not create a watch that promises live Xianyu coverage while the worker is inactive. After a replacement worker passes acceptance, create a ChatGPT automation at the requested cadence.
 2. Follow the per-watch request/result protocol in `CHATGPT_XIANYU_SKILL.md`.
 3. Keep queries serial and conservative. Stop extra querying on verification/risk-control errors.
 4. Alert on new listings, meaningful price drops, or unusually attractive items; do not repeatedly dump unchanged inventory.
