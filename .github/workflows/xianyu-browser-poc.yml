@@ -2,9 +2,6 @@ name: Xianyu Browser PoC
 
 on:
   workflow_dispatch:
-  push:
-    paths:
-      - ".github/workflows/xianyu-browser-poc.yml"
 
 permissions:
   contents: write
@@ -44,7 +41,11 @@ jobs:
                       body=(await page.locator("body").inner_text())[:5000]
                       out["body_sample"]=body
                       out["challenge"]=any(x in body for x in ["非法访问","验证码","滑块","RGV587","FAIL_SYS_USER_VALIDATE"])
-                      out["ok"]=bool(r and r.status < 400 and not out["challenge"])
+                      out["item_count"]=await page.locator('a[href*="/item?"]').count()
+                      out["status"]=("BLOCKED" if out["challenge"] else
+                                     "LOGIN_REQUIRED" if "立即登录" in body or "登录后可以" in body else
+                                     "NO_ITEMS" if out["item_count"] == 0 else "NORMAL")
+                      out["ok"]=bool(r and r.status < 400 and out["status"] == "NORMAL")
                   except Exception as e:
                       out["error"]=repr(e)
                   await browser.close()
