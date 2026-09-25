@@ -1,11 +1,17 @@
 ---
 name: xianyu-search
-description: Search, monitor, compare, shortlist, and schedule watches for current Xianyu/Goofish listings for any product using the user's Module B bridge. Trigger on phrases such as 闲鱼搜索、搜闲鱼、蹲货、捡漏、比价、找二手、监控某个商品、使用我的咸鱼搜索技能. Product-agnostic: never assume MacBook unless requested.
+description: Handle Xianyu/Goofish search and watch requests for any product, with explicit source and freshness checks. The former Module B bridge is offline. Trigger on 闲鱼搜索、搜闲鱼、蹲货、捡漏、比价、找二手、监控某个商品. Product-agnostic: never assume MacBook unless requested.
 ---
 
 # Xianyu Search
 
 This is the user's reusable Xianyu/Goofish search capability. It is not MacBook-specific.
+
+## Current service status (2026-09-25)
+
+The Tokyo Module B server files, TCP 18080 rule, API Gateway APIs, and CloudFront distribution were removed during the VPN rollback. The `Xianyu Bridge`, `Xianyu On Demand`, and `Xianyu Watch Request` Actions workflows are disabled. Their request/result files and `latest-public.json` are historical data. **Do not invoke the old bridge, re-enable those workflows, or describe an old snapshot as a fresh search.** The GitHub Actions headed-browser test opened a page shell but returned no listings and showed a login prompt. There is no verified live online search backend yet.
+
+For a current request, first check whether a replacement backend has been deployed and independently verified. If none exists, say so plainly. Public search-engine results may be offered as an incomplete, delayed index only; they are not a live Xianyu scan or a dependable watch. Do not create a recurring watch that claims live coverage until a live backend passes acceptance checks.
 
 ## Goal
 
@@ -44,12 +50,11 @@ For expensive electronics, surface relevant risk terms and missing checks, inclu
 
 Do not invent condition, battery, authenticity, repair history, lock status, RAM, storage, model, or seller claims.
 
-## Preferred data paths
+## Retired data paths (historical reference only)
 
 ### 1. Codex/local direct query
 
-Use:
-`~/.agents/skills/xianyu-search/scripts/query_xianyu.py "<keyword>" --limit 30`
+The old local script `~/.agents/skills/xianyu-search/scripts/query_xianyu.py` points to the removed CloudFront endpoint. Do not run it unless its backend URL and current ownership are deliberately reconfigured and verified.
 
 The generic endpoint uses base64url keyword transport so Chinese queries survive CloudFront/API Gateway unchanged.
 
@@ -61,12 +66,7 @@ The generic endpoint uses base64url keyword transport so Chinese queries survive
 Repository:
 `jiangjy0606-pixel/macbook-radar`
 
-For one-off generic searches:
-1. Update `request.json` to contain the requested keyword.
-2. Wait for workflow `Xianyu On Demand` to complete.
-3. Read `latest-query.json`.
-4. Verify `ok=true`, returned `keyword` exactly matches the request, and data is fresh.
-5. Analyze all returned items, then present only the useful candidates.
+The `request.json` / `latest-query.json` protocol is retained in the repository for future redesign, but its worker is disabled. Updating `request.json` will not produce a fresh result.
 
 For the MacBook radar:
 - broad cached snapshot: `latest-public.json`
@@ -79,10 +79,10 @@ Only if the bridge path fails. A bridge failure is not evidence that Xianyu has 
 
 ## Recurring watch / 定时蹲
 
-When the user asks to 定时蹲/监控 a product in ordinary ChatGPT:
+Once a replacement live worker has been deployed and verified, when the user asks to 定时蹲/监控 a product in ordinary ChatGPT:
 1. Create a recurring automation at a cadence appropriate to the product.
-2. Use a stable ASCII watch id and update `requests/<watch-id>.json` each run.
-3. Read the matching `results/<watch-id>.json` produced by workflow `Xianyu Watch Request`.
+2. Use a stable ASCII watch id and the verified worker's request/result protocol.
+3. Read the matching result for that watch and verify that the worker actually ran.
 4. Verify returned keyword and freshness.
 5. Compare with previous results when available.
 6. Prioritize newly appeared listings, meaningful price drops, and unusually cheap items.
