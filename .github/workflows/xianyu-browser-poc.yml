@@ -22,7 +22,9 @@ jobs:
         run: |
           pip install playwright
           python -m playwright install --with-deps chromium
-      - name: Probe Goofish search
+          sudo apt-get update -qq
+          sudo apt-get install -y xvfb
+      - name: Probe one anonymous Goofish search in headed Chrome
         run: |
           cat > /tmp/probe.py <<'PY'
           import asyncio, json, time
@@ -31,11 +33,11 @@ jobs:
           async def main():
               out={"checked_at":int(time.time()),"keyword":"MacBook Pro","ok":False}
               async with async_playwright() as p:
-                  browser=await p.chromium.launch(headless=True)
+                  browser=await p.chromium.launch(headless=False)
                   page=await browser.new_page(locale="zh-CN")
                   try:
                       r=await page.goto("https://www.goofish.com/search?q=MacBook%20Pro", wait_until="domcontentloaded", timeout=45000)
-                      await page.wait_for_timeout(7000)
+                      await page.wait_for_timeout(2500)
                       out["http_status"]=r.status if r else None
                       out["url"]=page.url
                       out["title"]=await page.title()
@@ -50,7 +52,7 @@ jobs:
                   json.dump(out,f,ensure_ascii=False,indent=2)
           asyncio.run(main())
           PY
-          python /tmp/probe.py
+          xvfb-run -a python /tmp/probe.py
       - name: Commit probe result
         run: |
           git config user.name "github-actions[bot]"
